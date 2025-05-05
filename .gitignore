@@ -1,7 +1,7 @@
-HELP.md
+chat-server-backend/HELP.md
 .gradle
 build/
-!gradle/wrapper/gradle-wrapper.jar
+!chat-server-backend/gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
@@ -18,7 +18,7 @@ bin/
 !**/src/test/**/bin/
 
 ### IntelliJ IDEA ###
-.idea
+chat-server-backend/.idea
 *.iws
 *.iml
 *.ipr
