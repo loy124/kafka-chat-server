@@ -16,18 +16,25 @@ public class ChatKafkaConsumer {
     private final ChatService chatService;
 
     @KafkaListener(topics = "chat-room", groupId = "chat-group")
-    public void listen(ConsumerRecord<String, String> record) {
+    public void userMessageListener(ConsumerRecord<String, String> record) {
         try {
-            String json = record.value(); // Kafka 메시지 값
-            ChatMessage message = objectMapper.readValue(json, ChatMessage.class);
+            ChatMessage message = objectMapper.readValue(record.value(), ChatMessage.class);
+            System.out.println("유저용 Kafka 수신 메시지: " + message);
+            chatService.handleReceivedMessage(message);  // WebSocket 전송 등
+        } catch (Exception e) {
+            System.err.println("[chat-group] 처리 실패: " + e.getMessage());
+        }
+    }
 
-            System.out.println("Kafka 수신 메시지: " + message);
-
-            // 서비스로 위임
-            chatService.handleReceivedMessage(message);
+    // 로그 저장용 Consumer (같은 토픽, 다른 groupId)
+    @KafkaListener(topics = "chat-room", groupId = "log-group")
+    public void logMessageListener(ConsumerRecord<String, String> record) {
+        try {
+            ChatMessage message = objectMapper.readValue(record.value(), ChatMessage.class);
+            System.out.println("🗃[log-group] 채팅 로그 저장용 수신: " + message);
 
         } catch (Exception e) {
-            System.err.println("Kafka 메시지 처리 실패: " + e.getMessage());
+            System.err.println("[log-group] 처리 실패: " + e.getMessage());
         }
     }
 }
