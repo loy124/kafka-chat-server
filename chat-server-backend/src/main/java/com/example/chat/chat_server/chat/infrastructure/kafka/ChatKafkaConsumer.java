@@ -4,12 +4,14 @@ import com.example.chat.chat_server.chat.dto.ChatMessage;
 import com.example.chat.chat_server.chat.service.ChatService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ChatKafkaConsumer {
 
     private final ObjectMapper objectMapper;
@@ -19,10 +21,10 @@ public class ChatKafkaConsumer {
     public void userMessageListener(ConsumerRecord<String, String> record) {
         try {
             ChatMessage message = objectMapper.readValue(record.value(), ChatMessage.class);
-            System.out.println("유저용 Kafka 수신 메시지: " + message);
+            log.info("유저용 Kafka 수신 메시지: " + message);
             chatService.handleReceivedMessage(message);  // WebSocket 전송 등
         } catch (Exception e) {
-            System.err.println("[chat-group] 처리 실패: " + e.getMessage());
+            log.error("[chat-group] 처리 실패: " + e.getMessage());
         }
     }
 
@@ -31,10 +33,10 @@ public class ChatKafkaConsumer {
     public void logMessageListener(ConsumerRecord<String, String> record) {
         try {
             ChatMessage message = objectMapper.readValue(record.value(), ChatMessage.class);
-            System.out.println("🗃[log-group] 채팅 로그 저장용 수신: " + message);
+            log.info("🗃[log-group] 채팅 로그 저장용 수신: " + message);
 
         } catch (Exception e) {
-            System.err.println("[log-group] 처리 실패: " + e.getMessage());
+            log.error("[log-group] 처리 실패: " + e.getMessage());
         }
     }
 }

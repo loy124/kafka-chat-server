@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+    <script>
+        const socket = new SockJS('http://localhost:8080/ws-chat');
+        const stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, () => {
+            console.log('WebSocket 연결 완료');
+
+            // 특정 채팅방 구독 (예: room-1)
+            stompClient.subscribe('/topic/chat/room-1', (msg) => {
+
+                const chat = JSON.parse(msg.body);
+                console.log("받은 메시지:", chat);
+            });
+        });
+    </script>
+</body>
+</html>
