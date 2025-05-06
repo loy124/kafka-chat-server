@@ -1,30 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <title>STOMP 채팅 - 다중 유저</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 1rem; }
+    #chat-box { border: 1px solid #ccc; height: 300px; overflow-y: auto; padding: 10px; margin-bottom: 10px; }
+    .me { text-align: right; color: blue; }
+    .other { text-align: left; color: green; }
+  </style>
 </head>
 <body>
 
+<h2>채팅방: room-1</h2>
+
+<label>사용자 이름 (user ID):</label>
+<input type="text" id="user-id" value="userA" placeholder="userA 또는 userB" />
+<button onclick="connect()">접속</button>
+
+<div id="chat-ui" style="display: none;">
+  <div id="chat-box"></div>
+
+  <input type="text" id="message-input" placeholder="메시지를 입력하세요" style="width: 70%">
+  <button onclick="sendMessage()">전송</button>
+</div>
+
+<script>
+  let stompClient = null;
+  let userId = '';
+  const roomId = 'room-1';
+
+  function connect() {
+    userId = document.getElementById('user-id').value.trim();
+    if (!userId) {
+      alert('사용자 이름을 입력해주세요');
+      return;
+    }
+
+    const socket = new SockJS('http://localhost:8080/ws-chat');
+    stompClient = Stomp.over(socket);
     
-    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 
-    <script>
-        const socket = new SockJS('http://localhost:8080/ws-chat');
-        const stompClient = Stomp.over(socket);
+    stompClient.connect({}, () => {
+      console.log('WebSocket 연결 완료 (유저:', userId, ')');
+      document.querySelector('#chat-ui').style.display = 'block';
 
-        stompClient.connect({}, () => {
-            console.log('WebSocket 연결 완료');
+      stompClient.subscribe(`/topic/chat/${roomId}`, (msg) => {
+        console.log(msg)
+        const chat = JSON.parse(msg.body);
+        displayMessage(chat);
+      });
+    });
+  }
 
-            // 특정 채팅방 구독 (예: room-1)
-            stompClient.subscribe('/topic/chat/room-1', (msg) => {
+  function sendMessage() {
+    const messageInput = document.getElementById('message-input');
+    const message = messageInput.value.trim();
+    if (!message) return;
 
-                const chat = JSON.parse(msg.body);
-                console.log("받은 메시지:", chat);
-            });
-        });
-    </script>
+    axios.post('http://localhost:8080/api/chat/send', {
+      roomId: 1,
+      sender: userId,
+      message: message
+    }).then(() => {
+      messageInput.value = '';
+    }).catch(err => {
+      console.error('전송 실패:', err);
+    });
+  }
+
+  function displayMessage(chat) {
+    const box = document.querySelector('#chat-box');
+    const div = document.createElement('div');
+    div.className = (chat.sender === userId) ? 'me' : 'other';
+    div.innerText = `${chat.sender}: ${chat.message}`;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+</script>
+
 </body>
 </html>
